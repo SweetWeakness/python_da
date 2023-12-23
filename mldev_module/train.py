@@ -1,8 +1,7 @@
 import argparse
 import pandas
 import pickle
-from sklearn.linear_model import LinearRegression
-from matplotlib import pyplot as plt
+from sklearn.linear_model import LinearRegression, LassoLars
 
 from utils import *
 import logging
@@ -22,34 +21,47 @@ def loadData():
     return X_train, X_dev, y_train, y_dev
 
 
-def loadModel():
+def loadModels():
     try:
-        with open(f"{MODELS_PATH}/model.pickle", "rb") as fp:
-            model = pickle.load(fp)
+        with open(f"{MODELS_PATH}/model1.pickle", "rb") as fp:
+            model1 = pickle.load(fp)
     except FileNotFoundError:
-        model = LinearRegression()
-    return model
+        model1 = LinearRegression()
+    try:
+        with open(f"{MODELS_PATH}/model2.pickle", "rb") as fp:
+            model2 = pickle.load(fp)
+    except FileNotFoundError:
+        model2 = LassoLars(normalize=True)
+    
+    return model1, model2
 
 
-def saveModel(model):
-    with open(f"{MODELS_PATH}/model.pickle", "wb") as fp:
-        pickle.dump(model, fp)
+def saveModels(model1, model2):
+    with open(f"{MODELS_PATH}/model1.pickle", "wb") as fp:
+        pickle.dump(model1, fp)
+    with open(f"{MODELS_PATH}/model2.pickle", "wb") as fp:
+        pickle.dump(model2, fp)
 
 
-def trainModel(model, X_train, y_train):
-    model.fit(X_train, y_train)
-    report = model.score(X_train, y_train)
-    logging.info(f"Regression report, score = {report}")
+def trainModel(model1, model2, X_train, y_train):
+    model1.fit(X_train, y_train)
+    model2.fit(X_train, y_train)
+    y = model2.predict(X_train)
+    report1 = model1.score(X_train, y_train)
+    report2 = model2.score(X_train, y_train)
+    logging.info(f"Regression score = {report1}")
+    logging.info(f"LassoLars score = {report2}")
     with open(f"{LOG_PATH}/train_log.txt", "w") as outp:
-        outp.write(f"score: {report}")
-    return model
+        outp.write(f"regression_score: {report1}\nlassolars_score: {report2}")
+    return model1, model2
 
 
-def saveResult(model, X_dev, y_dev):
-    report = model.score(X_dev, y_dev)
-    logging.info(f"Saving results, score = {report}")
+def saveResult(model1, model2, X_dev, y_dev):
+    report1 = model1.score(X_dev, y_dev)
+    report2 = model2.score(X_dev, y_dev)
+    logging.info(f"Saving results, reg_score = {report1}, lassolars_score = {report2}")
     with open(f"{RESULTS_PATH}/dev_result.txt", "w") as outp:
-        outp.write(f"score: {report}")
+        outp.write(f"regression_score: {report1}\nlassolars_score: {report2}")
 
 
 def main():
@@ -71,10 +83,10 @@ def main():
     make_dir(f"{RESULTS_PATH}")
 
     X_train, X_dev, y_train, y_dev = loadData()
-    model = loadModel()
-    model = trainModel(model, X_train, y_train)
-    saveModel(model)
-    saveResult(model, X_dev, y_dev)
+    model1, model2 = loadModels()
+    model1, model2 = trainModel(model1, model2, X_train, y_train)
+    saveModels(model1, model2)
+    saveResult(model1, model2, X_dev, y_dev)
 
 
 if __name__ == "__main__":

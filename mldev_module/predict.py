@@ -21,16 +21,19 @@ def load_data():
     return X_train, X_dev, X_test, y_train, y_dev, y_test
 
 
-def load_model():
-    with open(f"{MODELS_PATH}/model.pickle", "rb") as fp:
-        model = pickle.load(fp)
-    return model
+def load_models():
+    with open(f"{MODELS_PATH}/model1.pickle", "rb") as fp:
+        model1 = pickle.load(fp)
+    with open(f"{MODELS_PATH}/model2.pickle", "rb") as fp:
+        model2 = pickle.load(fp)
+    return model1, model2
 
 
-def predict_and_save(model, X, y, path):
-    report = model.score(X, y)
+def predict_and_save(model1, model2, X, y):
+    report1 = model1.score(X, y)
+    report2 = model2.score(X, y)
     with open(f"{RESULTS_PATH}/result.txt", "w") as outp:
-        outp.write(f"score: {report}")
+        outp.write(f"reg_score: {report1}\nlassolars_score: {report2}")
 
 
 def main():
@@ -47,8 +50,8 @@ def main():
     RESULTS_PATH = f"./results/{run_name}"
 
     X_train, X_dev, X_test, y_train, y_dev, y_test = load_data()
-    model = load_model()
-    predict_and_save(model, X_test, y_test, f"{RESULTS_PATH}/test_report.json")
+    model1, model2 = load_models()
+    predict_and_save(model1, model2, X_test, y_test)
 
 
 if __name__ == "__main__":

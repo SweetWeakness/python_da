@@ -2,6 +2,7 @@ import argparse
 import pickle
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+import os
 import pandas as pd
 import numpy as np
 import re
@@ -9,7 +10,10 @@ from utils import make_dir, DATA_PATH
 
 
 def load_and_split(n):
-    df = pd.read_csv("detmir.csv")
+    cur_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.abspath(os.path.join(cur_path, os.pardir))
+    csv_path = os.path.join(dir_path, "scrapy_module", "detmir.csv")
+    df = pd.read_csv(csv_path)
     y = []
     for a in list(np.array(df["Цена"])):
         y.append(re.sub("[^0-9]", "", a))
@@ -43,7 +47,7 @@ def save_data(X_train, X_dev, X_test, y_train, y_dev, y_test):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run_name", default="default")
-    parser.add_argument("--n", default=5000)
+    parser.add_argument("--n", type=int, default=5000)
     args = parser.parse_args()
     run_name = args.run_name
     n = args.n

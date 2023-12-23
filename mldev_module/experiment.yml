@@ -1,25 +1,23 @@
-# Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
-# For details: https://gitlab.com/mlrep/mldev/-/blob/master/NOTICE.md
-
 prepare: &prepare_stage !BasicStage
   name: prepare
   params:
-    size: 1
+    max_price: 4500
+    run_name: "default"
   inputs:
     - !path { path: "./src" }
   outputs:
-    - !path { path: "./data" }
+    - !path { path: "./data/${self.params.run_name}" }
   script:
-    - "python3 src/prepare.py"
+    - "python3 prepare.py --run_name /"${self.params.run_name}/" --n ${self.params.max_price}"
 
 
 train: &train_stage !BasicStage
   name: train
   params:
-    num_iters: 10
+    run_name: "default"
   inputs:
     - !path
-      path: "./data"
+      path: "./data/${self.params.run_name}"
       files:
         - "X_train.pickle"
         - "X_dev.pickle"
@@ -29,31 +27,30 @@ train: &train_stage !BasicStage
         - "y_test.pickle"
   outputs: &model_data
     - !path
-      path: "models/default"
+      path: "models/${self.params.run_name}"
       files:
         - "model.pickle"
   script:
-    - "python3 src/train.py --n ${self.params.num_iters}"
+    - "python3 train.py --run_name /"${self.params.run_name}/""
 
 present_model: &present_model !BasicStage
   name: present_model
+  params:
+    run_name: "default"
   inputs: *model_data
   outputs:
     - !path
-      path: "results/default"
-  env:
-    MLDEV_MODEL_PATH: ${path(self.inputs[0].path)}
-    RESULTS_PATH: ${self.outputs[0].path}
+      path: "results/${self.params.run_name}"
   script:
     - |
-      python3 src/predict.py
+      python3 predict.py --run_name "${self.params.run_name}"
       printf "=============================\n"
       printf "Test report:\n\n"
-      cat ${path(self.outputs[0].path)}/test_report.json
+      cat ${path(self.outputs[0].path)}/result.txt
       printf "\n\n=============================\n"
 
 pipeline: !GenericPipeline
   runs:
-    - *prepare_stage # prepare
+    - *prepare_stage
     - *train_stage
-    - *present_model # finals
+    - *present_model
